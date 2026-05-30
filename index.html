@@ -1,1 +1,600 @@
 
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מקושרים — מפת המסע</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;900&display=swap');
+:root {
+  --bg:#0a0e1a; --surface:#111827; --card:#1a2235; --accent:#f59e0b;
+  --blue:#3b82f6; --glow:#60a5fa; --text:#f1f5f9; --muted:#94a3b8;
+  --line:#2d3748; --success:#10b981; --danger:#ef4444;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;}
+.screen.active{display:flex;}
+
+#entry-screen{background:radial-gradient(ellipse at 50% 0%,#1e3a5f 0%,var(--bg) 70%);gap:2rem;text-align:center;}
+.logo h1{font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,#f59e0b,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:0.5rem;}
+.logo p{color:var(--muted);font-size:1rem;}
+.entry-btns{display:flex;flex-direction:column;gap:0.75rem;width:100%;max-width:300px;}
+
+.btn-primary{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;border:none;padding:0.875rem 1.5rem;border-radius:12px;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 15px rgba(245,158,11,0.3);}
+.btn-primary:hover{transform:translateY(-2px);}
+.btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--line);padding:0.875rem 1.5rem;border-radius:12px;font-family:'Heebo',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-secondary:hover{border-color:var(--glow);color:var(--glow);}
+.btn-small{background:var(--card);color:var(--text);border:1px solid var(--line);padding:0.5rem 1rem;border-radius:8px;font-family:'Heebo',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.btn-small:hover{border-color:var(--accent);}
+
+.join-form{display:flex;flex-direction:column;gap:0.75rem;width:100%;max-width:300px;}
+.join-form input,.text-input{background:var(--card);border:1px solid var(--line);color:var(--text);padding:0.875rem 1rem;border-radius:12px;font-family:'Heebo',sans-serif;font-size:1rem;text-align:center;outline:none;transition:border-color 0.2s;width:100%;}
+.join-form input:focus,.text-input:focus{border-color:var(--glow);}
+.join-form input::placeholder,.text-input::placeholder{color:var(--muted);}
+.error-msg{color:var(--danger);font-size:0.85rem;text-align:center;margin-top:0.5rem;}
+
+#waiting-screen{background:radial-gradient(ellipse at 50% 0%,#1e3a5f 0%,var(--bg) 70%);gap:1.5rem;text-align:center;}
+.room-code-display{font-size:4rem;font-weight:900;color:var(--accent);letter-spacing:8px;text-shadow:0 0 30px rgba(245,158,11,0.5);}
+.players-list{display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;max-width:360px;}
+.player-chip{background:rgba(59,130,246,0.2);border:1px solid rgba(96,165,250,0.3);padding:0.4rem 0.875rem;border-radius:20px;font-size:0.9rem;color:var(--glow);animation:popIn 0.3s;}
+@keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+.top-bar{background:var(--surface);padding:0.875rem 1.25rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);width:100%;flex-shrink:0;}
+.top-bar h2{font-size:1rem;font-weight:700;}
+.fac-badge{background:rgba(245,158,11,0.2);color:var(--accent);font-size:0.8rem;font-weight:700;padding:0.25rem 0.5rem;border-radius:6px;}
+
+/* SORT FAC */
+#sort-fac-screen{background:var(--bg);gap:0;padding:0;justify-content:flex-start;}
+.scroll-area{flex:1;overflow-y:auto;padding:1.25rem;width:100%;max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:1rem;}
+.info-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.25rem;text-align:center;}
+.info-card p{color:var(--muted);font-size:0.9rem;line-height:1.6;}
+.info-card .count{color:var(--accent);font-weight:700;font-size:1rem;margin-top:0.5rem;}
+.bottom-bar{padding:1rem 1.25rem;width:100%;display:flex;flex-direction:column;gap:0.75rem;background:var(--surface);border-top:1px solid var(--line);flex-shrink:0;}
+
+/* METRO */
+.metro-wrap{position:relative;width:100%;padding-right:1rem;}
+.metro-line-v{position:absolute;right:22px;top:22px;bottom:22px;width:4px;background:linear-gradient(to bottom,var(--accent),var(--blue));border-radius:2px;z-index:0;}
+.station-row{display:flex;align-items:center;gap:0.875rem;padding:0.4rem 0;position:relative;z-index:1;}
+.station-dot{width:44px;height:44px;border-radius:50%;background:var(--card);border:3px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.station-dot.lit{background:var(--accent);box-shadow:0 0 20px rgba(245,158,11,0.5);}
+.station-info{flex:1;}
+.station-name{font-size:0.95rem;font-weight:700;}
+.station-sub{font-size:0.78rem;color:var(--muted);}
+
+/* SORT PLAYER */
+#sort-player-screen{background:radial-gradient(ellipse at 50% -20%,#1e3a5f 0%,var(--bg) 60%);gap:1rem;padding:1rem;justify-content:flex-start;padding-top:2rem;}
+.sort-title{font-size:1.1rem;font-weight:700;text-align:center;}
+.sort-subtitle{color:var(--muted);font-size:0.85rem;text-align:center;}
+.cards-pool{display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;max-width:420px;}
+.sort-card{background:var(--card);border:2px solid var(--line);border-radius:10px;padding:0.6rem 0.9rem;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all 0.2s;user-select:none;display:flex;align-items:center;gap:0.4rem;}
+.sort-card:hover{border-color:var(--accent);}
+.sort-card.selected{border-color:var(--accent);background:rgba(245,158,11,0.15);}
+.sort-card.used{opacity:0.25;pointer-events:none;}
+.player-slots{display:flex;flex-direction:column;gap:0.4rem;width:100%;max-width:420px;}
+.p-slot{background:var(--surface);border:2px dashed var(--line);border-radius:10px;padding:0.65rem 0.875rem;min-height:46px;display:flex;align-items:center;gap:0.6rem;cursor:pointer;transition:all 0.2s;}
+.p-slot.filled{border-color:var(--accent);border-style:solid;background:rgba(245,158,11,0.06);}
+.p-slot:hover{border-color:var(--glow);}
+.p-slot-num{width:22px;height:22px;border-radius:50%;background:rgba(245,158,11,0.2);color:var(--accent);font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.p-slot-text{font-size:0.85rem;font-weight:600;flex:1;}
+.remove-btn{color:var(--danger);cursor:pointer;font-size:0.75rem;padding:0.2rem;}
+
+/* QUESTION SCREEN */
+#question-screen{background:radial-gradient(ellipse at 50% -20%,#1e3a5f 0%,var(--bg) 60%);gap:1rem;padding:1.5rem;justify-content:flex-start;padding-top:2rem;}
+.q-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.5rem;max-width:420px;width:100%;text-align:center;}
+.q-emoji{font-size:2.5rem;margin-bottom:0.5rem;}
+.q-station{color:var(--accent);font-size:0.85rem;font-weight:700;margin-bottom:0.25rem;}
+.q-text{font-size:1.05rem;font-weight:700;margin-bottom:1rem;}
+.q-options{display:flex;flex-direction:column;gap:0.5rem;width:100%;max-width:420px;}
+.q-btn{background:var(--card);border:2px solid var(--line);color:var(--text);padding:0.8rem 1rem;border-radius:12px;font-family:'Heebo',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:all 0.2s;text-align:right;}
+.q-btn:hover{border-color:var(--accent);background:rgba(245,158,11,0.1);}
+.q-btn.chosen{border-color:var(--success);background:rgba(16,185,129,0.15);pointer-events:none;}
+.q-open{display:flex;gap:0.5rem;width:100%;max-width:420px;}
+.q-open input{flex:1;}
+.waiting-msg{color:var(--success);font-size:0.9rem;text-align:center;}
+
+/* FAC QUESTION SCREEN */
+#fac-question-screen{background:var(--bg);gap:0;padding:0;justify-content:flex-start;}
+.q-results{display:flex;flex-direction:column;gap:0.6rem;width:100%;max-width:450px;padding:1rem;}
+.result-row{display:flex;align-items:center;gap:0.6rem;}
+.result-label{font-size:0.82rem;font-weight:600;min-width:120px;line-height:1.3;}
+.result-bar-wrap{flex:1;background:rgba(45,55,72,0.5);border-radius:6px;height:24px;overflow:hidden;}
+.result-bar{height:100%;background:linear-gradient(135deg,var(--accent),var(--blue));border-radius:6px;transition:width 0.8s;}
+.result-count{font-size:0.82rem;font-weight:700;color:var(--accent);min-width:22px;text-align:center;}
+.open-answers{display:flex;flex-direction:column;gap:0.4rem;max-width:450px;width:100%;padding:0 1rem;}
+.open-answer-chip{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:0.5rem 0.875rem;font-size:0.85rem;}
+
+/* FINAL */
+#final-screen{background:radial-gradient(ellipse at 50% 0%,#1e3a5f 0%,var(--bg) 70%);gap:1.5rem;text-align:center;padding:2rem;}
+.final-emoji{font-size:4rem;animation:bounce 1s infinite;}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+
+.info-text{color:var(--muted);font-size:0.9rem;text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- ENTRY -->
+<div id="entry-screen" class="screen active">
+  <div class="logo"><h1>🚇 מקושרים</h1><p>מפת המסע שלנו — שנה שלמה יחד</p></div>
+  <div id="entry-choice" class="entry-btns">
+    <button class="btn-primary" onclick="startFacilitator()">אני המנחה 👩‍🏫</button>
+    <button class="btn-secondary" onclick="showJoinForm()">אני מצטרף/ת 🙋</button>
+  </div>
+  <div id="join-form-area" style="display:none;width:100%;max-width:300px;">
+    <div class="join-form">
+      <input type="text" id="player-name" placeholder="השם שלך" maxlength="20"/>
+      <input type="text" id="room-code-input" placeholder="קוד חדר (4 ספרות)" maxlength="4" inputmode="numeric"/>
+      <button class="btn-primary" onclick="joinGame()">כניסה 🚇</button>
+      <button class="btn-secondary" onclick="showEntryChoice()">חזרה</button>
+    </div>
+    <p id="join-error" class="error-msg" style="display:none;"></p>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="waiting-screen" class="screen">
+  <div class="top-bar" style="width:100%;"><h2>🚇 מקושרים</h2><span class="fac-badge">מנחה</span></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;text-align:center;padding:1.5rem;">
+    <p class="info-text">שתפו את קוד החדר עם הקבוצה</p>
+    <div class="room-code-display" id="display-room-code">----</div>
+    <p class="info-text" id="waiting-count">ממתינים לשחקנים...</p>
+    <div class="players-list" id="players-list"></div>
+    <button class="btn-primary" onclick="startSortingFac()" style="width:100%;max-width:300px;">התחל את המסע ▶</button>
+    <button class="btn-secondary" onclick="location.reload()" style="width:100%;max-width:300px;">יציאה</button>
+  </div>
+</div>
+
+<!-- SORT FAC -->
+<div id="sort-fac-screen" class="screen">
+  <div class="top-bar" style="width:100%;"><h2>סדרו את תחנות המסע</h2><span class="fac-badge" id="fac-badge1"></span></div>
+  <div class="scroll-area">
+    <div class="info-card">
+      <p>הילדים מסדרים את תחנות המסע לפי הסדר שהם זוכרים.<br>כשכולם יסיימו — לחצי על "ראי תוצאות".</p>
+      <p class="count" id="sort-count-display"></p>
+    </div>
+    <div class="metro-wrap" id="metro-preview"><div class="metro-line-v"></div></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn-primary" onclick="showSortResults()">ראי תוצאות הסידור 📊</button>
+    <button class="btn-secondary" onclick="openStationQuestion(0)">עבור לשאלות התחנות ▶</button>
+    <button class="btn-secondary" onclick="endGame()">סיום המסע 🏁</button>
+  </div>
+</div>
+
+<!-- SORT PLAYER -->
+<div id="sort-player-screen" class="screen">
+  <p id="player-greeting" class="info-text"></p>
+  <p class="sort-title">סדרו את תחנות המסע שלנו 🚇</p>
+  <p class="sort-subtitle">לחצו על תחנה ואז על המקום שלה ברשימה</p>
+  <div class="cards-pool" id="player-pool"></div>
+  <div class="player-slots" id="player-slots"></div>
+  <button class="btn-primary" id="submit-sort-btn" onclick="submitOrder()" style="width:100%;max-width:420px;margin-top:0.5rem;" disabled>שלח את הסדר שלי ✅</button>
+  <p id="sort-submitted-msg" class="waiting-msg" style="display:none;">✅ הסדר שלך נשלח! ממתינים...</p>
+</div>
+
+<!-- QUESTION SCREEN (player) -->
+<div id="question-screen" class="screen">
+  <p id="q-player-name" class="info-text"></p>
+  <div class="q-card">
+    <div class="q-emoji" id="q-emoji"></div>
+    <p class="q-station" id="q-station-name"></p>
+    <p class="q-text" id="q-text"></p>
+  </div>
+  <div id="q-options-area" style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:0.5rem;"></div>
+  <p id="q-answered-msg" class="waiting-msg" style="display:none;">✅ תשובתך נרשמה! ממתינים למנחה...</p>
+</div>
+
+<!-- FAC QUESTION SCREEN -->
+<div id="fac-question-screen" class="screen">
+  <div class="top-bar" style="width:100%;"><h2 id="fac-q-title">שאלת תחנה</h2><span class="fac-badge" id="fac-badge2"></span></div>
+  <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;width:100%;padding-bottom:1rem;">
+    <div id="fac-q-results" style="width:100%;max-width:450px;padding:1rem;display:flex;flex-direction:column;gap:0.5rem;"></div>
+  </div>
+  <div class="bottom-bar">
+    <button class="btn-primary" id="next-station-btn" onclick="nextStation()">תחנה הבאה ▶</button>
+    <button class="btn-secondary" onclick="endGame()">סיום המסע 🏁</button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="final-screen" class="screen">
+  <div class="final-emoji">🎉</div>
+  <h2 style="font-size:1.8rem;font-weight:900;">המסע שלנו — שנה שלמה!</h2>
+  <p style="color:var(--muted);font-size:1rem;line-height:1.6;max-width:320px;">תודה שהייתם חלק מהמסע המיוחד הזה 💙</p>
+  <div class="metro-wrap" id="final-metro" style="max-width:340px;margin-top:0.5rem;"><div class="metro-line-v"></div></div>
+  <button class="btn-secondary" onclick="location.reload()" style="width:100%;max-width:300px;">סיום</button>
+</div>
+
+<script>
+const FB='https://mekusharim-default-rtdb.firebaseio.com';
+async function fbSet(p,v){await fetch(FB+'/'+p+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});}
+async function fbGet(p){const r=await fetch(FB+'/'+p+'.json');return await r.json();}
+async function fbPatch(p,v){await fetch(FB+'/'+p+'.json',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});}
+
+// ===== STATIONS & QUESTIONS =====
+const STATIONS=[
+  {id:'ice',    emoji:'🧊', label:'לשבור את הקרח',
+   questions:[
+     {type:'choice+open', text:'איך הרגשתם במפגש הראשון?',
+      options:['סבבה לגמרי','לא רציתי להיות בכלל','התלהבות'], openLabel:'משהו אחר...'}
+   ]},
+  {id:'tea',    emoji:'☕', label:'טקס תה',
+   questions:[
+     {type:'choice+open', text:'מה השתייה שלכם בטקס?',
+      options:['תה חם','מים','פטל'], openLabel:'משהו אחר...'}
+   ]},
+  {id:'music',  emoji:'🎵', label:'חידון מוזיקלי',
+   questions:[
+     {type:'choice+open', text:'איזה קטגוריה הכי אהבתם?',
+      options:['משחקי מחשב','שירי אירוויזיון','להיטי טיקטוק','שירי דיסני'], openLabel:'משהו אחר...'}
+   ]},
+  {id:'gold',   emoji:'🏆', label:'פריכית הזהב',
+   questions:[
+     {type:'open', text:'מי זכה הכי הרבה פעמים בפריכית?'}
+   ]},
+  {id:'treasure',emoji:'🗺️',label:'חפש את המטמון',
+   questions:[
+     {type:'open', text:'מה המשימה שהכי אהבתם?'},
+     {type:'open', text:'במה זכיתם בסוף?'}
+   ]},
+  {id:'food',   emoji:'🍫', label:'יוצרים עם אוכל',
+   questions:[
+     {type:'choice', text:'מה אהבתם יותר?',
+      options:['כדורי שוקולד','דיוקן אכיל']}
+   ]},
+  {id:'warmup', emoji:'💪', label:'חימום ומשחקים',
+   questions:[
+     {type:'choice+open', text:'מה הכי אהבתם?',
+      options:['משחק כריות','משיכת חבל','קפיצה בחבל'], openLabel:'משהו אחר...'}
+   ]},
+  {id:'hanuka', emoji:'🕯️', label:'חנוכה יחד',
+   questions:[
+     {type:'choice', text:'מה הסופגנייה שלכם?',
+      options:['שוקולד','וניל','ריבה','בלי סופגנייה']}
+   ]},
+  {id:'picnic', emoji:'🧺', label:'פיקניק יחד',
+   questions:[
+     {type:'open', text:'מה הבאתם לפיקניק?'}
+   ]},
+  {id:'falafel',emoji:'🥙', label:'הליכה לפלאפל',
+   questions:[
+     {type:'choice', text:'הפלאפל שלכם —',
+      options:['עם הכל','בלי חריף','בלי ירק','בלי פלאפל 😄']}
+   ]},
+  {id:'gift',   emoji:'🎁', label:'הסיום — הקובייה',
+   questions:[
+     {type:'open', text:'מה אתם לוקחים מהשנה הזו?'}
+   ]},
+];
+
+// ===== STATE =====
+let role=null,roomCode=null,myName=null,pollTimer=null;
+let playerOrder=[],selectedCard=null,submittedOrder=false;
+let currentStationIdx=0,currentQIdx=0,answeredQ=false;
+let finalStationOrder=null;
+
+// ===== SCREENS =====
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function showEntryChoice(){document.getElementById('entry-choice').style.display='flex';document.getElementById('join-form-area').style.display='none';}
+function showJoinForm(){document.getElementById('entry-choice').style.display='none';document.getElementById('join-form-area').style.display='block';}
+function safeKey(n){return n.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g,'_');}
+
+// ===== FACILITATOR FLOW =====
+async function startFacilitator(){
+  role='facilitator';
+  roomCode=Math.floor(1000+Math.random()*9000).toString();
+  await fbSet('mk3/'+roomCode,{status:'waiting',players:{},orders:{},finalOrder:null,currentStation:null,currentQ:0,qAnswers:{}});
+  document.getElementById('display-room-code').textContent=roomCode;
+  show('waiting-screen');
+  startPoll();
+}
+
+async function startSortingFac(){
+  stopPoll();
+  await fbPatch('mk3/'+roomCode,{status:'sorting'});
+  document.getElementById('fac-badge1').textContent='קוד: '+roomCode;
+  renderMetroPreview('metro-preview',STATIONS);
+  show('sort-fac-screen');
+  startPoll();
+}
+
+function renderMetroPreview(elId,stations){
+  const el=document.getElementById(elId);
+  el.innerHTML='<div class="metro-line-v"></div>'+
+    stations.map((s,i)=>`
+      <div class="station-row">
+        <div class="station-dot ${i===currentStationIdx?'lit':''}">${s.emoji}</div>
+        <div class="station-info"><div class="station-name">${s.label}</div></div>
+      </div>`).join('');
+}
+
+async function showSortResults(){
+  stopPoll();
+  const room=await fbGet('mk3/'+roomCode);
+  const orders=room.orders||{};
+  const allOrders=Object.values(orders);
+
+  const votes={};
+  STATIONS.forEach((_,i)=>{votes[i]={};STATIONS.forEach(s=>{votes[i][s.id]=0;});});
+  allOrders.forEach(order=>{order.forEach((id,pos)=>{if(votes[pos])votes[pos][id]=(votes[pos][id]||0)+1;});});
+
+  const winner=[];const used=new Set();
+  for(let i=0;i<STATIONS.length;i++){
+    let best=null,bc=0;
+    Object.entries(votes[i]).forEach(([id,c])=>{if(!used.has(id)&&c>bc){best=id;bc=c;}});
+    if(!best){const rem=STATIONS.map(s=>s.id).filter(id=>!used.has(id));best=rem[0];}
+    winner.push(best);used.add(best);
+  }
+  finalStationOrder=winner;
+  await fbPatch('mk3/'+roomCode,{finalOrder:winner});
+
+  // Show as metro
+  const orderedStations=winner.map(id=>STATIONS.find(s=>s.id===id));
+  const el=document.getElementById('metro-preview');
+  el.innerHTML='<div class="metro-line-v"></div>'+
+    orderedStations.map((s,i)=>`
+      <div class="station-row">
+        <div class="station-dot lit">${s.emoji}</div>
+        <div class="station-info">
+          <div class="station-name">${i+1}. ${s.label}</div>
+          <div class="station-sub">${allOrders.length} הצביעו</div>
+        </div>
+      </div>`).join('');
+  show('sort-fac-screen');
+}
+
+async function openStationQuestion(stIdx){
+  stopPoll();
+  if(!finalStationOrder){
+    const room=await fbGet('mk3/'+roomCode);
+    finalStationOrder=room.finalOrder||STATIONS.map(s=>s.id);
+  }
+  currentStationIdx=stIdx;
+  currentQIdx=0;
+  const stId=finalStationOrder[stIdx];
+  const station=STATIONS.find(s=>s.id===stId);
+  await fbPatch('mk3/'+roomCode,{status:'question',currentStation:stId,currentQ:0,qAnswers:{}});
+  document.getElementById('fac-badge2').textContent='קוד: '+roomCode;
+  document.getElementById('fac-q-title').textContent=station.emoji+' '+station.label;
+  renderFacQuestion(station,0);
+  show('fac-question-screen');
+  startPoll();
+}
+
+function renderFacQuestion(station,qIdx){
+  const q=station.questions[qIdx];
+  const nextBtn=document.getElementById('next-station-btn');
+  const isLastQ=qIdx>=station.questions.length-1;
+  const isLastStation=currentStationIdx>=STATIONS.length-1;
+  nextBtn.textContent=isLastQ?(isLastStation?'סיום המסע 🏁':'תחנה הבאה ▶'):'שאלה הבאה ▶';
+
+  document.getElementById('fac-q-results').innerHTML=`
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.25rem;text-align:center;">
+      <p style="font-size:1rem;font-weight:700;">${q.text}</p>
+      <p style="color:var(--muted);font-size:0.85rem;margin-top:0.5rem;">ממתינים לתשובות...</p>
+    </div>`;
+  startPoll();
+}
+
+async function nextStation(){
+  stopPoll();
+  if(!finalStationOrder){finalStationOrder=STATIONS.map(s=>s.id);}
+  const stId=finalStationOrder[currentStationIdx];
+  const station=STATIONS.find(s=>s.id===stId);
+
+  if(currentQIdx<station.questions.length-1){
+    currentQIdx++;
+    await fbPatch('mk3/'+roomCode,{currentQ:currentQIdx,qAnswers:{}});
+    renderFacQuestion(station,currentQIdx);
+    startPoll();
+    return;
+  }
+
+  if(currentStationIdx<STATIONS.length-1){
+    openStationQuestion(currentStationIdx+1);
+  } else {
+    endGame();
+  }
+}
+
+function endGame(){
+  stopPoll();
+  fbPatch('mk3/'+roomCode,{status:'ended'});
+  if(!finalStationOrder)finalStationOrder=STATIONS.map(s=>s.id);
+  const orderedStations=finalStationOrder.map(id=>STATIONS.find(s=>s.id===id));
+  renderMetroPreview('final-metro',orderedStations);
+  show('final-screen');
+}
+
+// ===== PLAYER FLOW =====
+async function joinGame(){
+  const name=document.getElementById('player-name').value.trim();
+  const code=document.getElementById('room-code-input').value.trim();
+  const err=document.getElementById('join-error');
+  err.style.display='none';
+  if(!name){err.textContent='אנא הכנס/י את שמך';err.style.display='block';return;}
+  if(code.length!==4){err.textContent='קוד חדר חייב להיות 4 ספרות';err.style.display='block';return;}
+  const room=await fbGet('mk3/'+code);
+  if(!room){err.textContent='קוד חדר לא קיים';err.style.display='block';return;}
+  role='player';roomCode=code;myName=name;submittedOrder=false;
+  await fbPatch('mk3/'+code+'/players',{[safeKey(name)]:name});
+  document.getElementById('player-greeting').textContent='שלום '+name+'! 🚇';
+  document.getElementById('q-player-name').textContent='שלום '+name+'!';
+  show('sort-player-screen');
+  renderPlayerSorter();
+  startPoll();
+}
+
+function renderPlayerSorter(){
+  playerOrder=new Array(STATIONS.length).fill(null);
+  selectedCard=null;
+  document.getElementById('player-pool').innerHTML=STATIONS.map(s=>
+    `<div class="sort-card" id="card-${s.id}" onclick="selectCard('${s.id}')">${s.emoji} ${s.label}</div>`).join('');
+  document.getElementById('player-slots').innerHTML=STATIONS.map((_,i)=>
+    `<div class="p-slot" id="pslot-${i}" onclick="placeCard(${i})">
+      <div class="p-slot-num">${i+1}</div>
+      <span class="p-slot-text" style="color:var(--muted);">לחצו לבחירה</span>
+    </div>`).join('');
+}
+
+function selectCard(id){
+  if(document.getElementById('card-'+id).classList.contains('used'))return;
+  document.querySelectorAll('.sort-card').forEach(c=>c.classList.remove('selected'));
+  selectedCard=id;
+  document.getElementById('card-'+id).classList.add('selected');
+}
+
+function placeCard(idx){
+  if(!selectedCard)return;
+  if(playerOrder[idx]){
+    const old=playerOrder[idx];
+    document.getElementById('card-'+old).classList.remove('used','selected');
+  }
+  playerOrder[idx]=selectedCard;
+  const s=STATIONS.find(st=>st.id===selectedCard);
+  const slot=document.getElementById('pslot-'+idx);
+  slot.classList.add('filled');
+  slot.innerHTML=`<div class="p-slot-num">${idx+1}</div>
+    <span class="p-slot-text">${s.emoji} ${s.label}</span>
+    <span class="remove-btn" onclick="removeSlot(${idx},event)">✕</span>`;
+  document.getElementById('card-'+selectedCard).classList.add('used');
+  selectedCard=null;
+  document.querySelectorAll('.sort-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('submit-sort-btn').disabled=!playerOrder.every(v=>v!==null);
+}
+
+function removeSlot(idx,e){
+  e.stopPropagation();
+  const id=playerOrder[idx];if(!id)return;
+  playerOrder[idx]=null;
+  document.getElementById('card-'+id).classList.remove('used');
+  const slot=document.getElementById('pslot-'+idx);
+  slot.classList.remove('filled');
+  slot.innerHTML=`<div class="p-slot-num">${idx+1}</div><span class="p-slot-text" style="color:var(--muted);">לחצו לבחירה</span>`;
+  document.getElementById('submit-sort-btn').disabled=true;
+}
+
+async function submitOrder(){
+  if(submittedOrder)return;submittedOrder=true;
+  await fbPatch('mk3/'+roomCode+'/orders',{[safeKey(myName)]:playerOrder});
+  document.getElementById('submit-sort-btn').style.display='none';
+  document.getElementById('sort-submitted-msg').style.display='block';
+}
+
+// PLAYER QUESTION
+function renderPlayerQuestion(station,qIdx){
+  answeredQ=false;
+  const q=station.questions[qIdx];
+  document.getElementById('q-emoji').textContent=station.emoji;
+  document.getElementById('q-station-name').textContent=station.label;
+  document.getElementById('q-text').textContent=q.text;
+  document.getElementById('q-answered-msg').style.display='none';
+  const area=document.getElementById('q-options-area');
+
+  if(q.type==='choice'||q.type==='choice+open'){
+    let html=q.options.map(opt=>
+      `<button class="q-btn" onclick="answerQuestion('${opt}')">${opt}</button>`).join('');
+    if(q.type==='choice+open'){
+      html+=`<div class="q-open"><input class="text-input" id="open-input" placeholder="${q.openLabel||'כתבו כאן...'}"/><button class="btn-small" onclick="answerOpen()">שלח</button></div>`;
+    }
+    area.innerHTML=html;
+  } else {
+    area.innerHTML=`<div class="q-open"><input class="text-input" id="open-input" placeholder="כתבו כאן..."/><button class="btn-small" onclick="answerOpen()">שלח</button></div>`;
+  }
+  show('question-screen');
+}
+
+async function answerQuestion(val){
+  if(answeredQ)return;answeredQ=true;
+  document.querySelectorAll('.q-btn').forEach(b=>b.classList.remove('chosen'));
+  event.target.classList.add('chosen');
+  await fbPatch('mk3/'+roomCode+'/qAnswers',{[safeKey(myName)]:val});
+  document.getElementById('q-answered-msg').style.display='block';
+}
+
+async function answerOpen(){
+  if(answeredQ)return;
+  const val=document.getElementById('open-input').value.trim();
+  if(!val)return;
+  answeredQ=true;
+  document.getElementById('open-input').disabled=true;
+  await fbPatch('mk3/'+roomCode+'/qAnswers',{[safeKey(myName)]:val});
+  document.getElementById('q-answered-msg').style.display='block';
+}
+
+// ===== POLL =====
+function startPoll(){
+  stopPoll();
+  pollTimer=setInterval(async()=>{
+    const room=await fbGet('mk3/'+(roomCode||'x'));
+    if(!room)return;
+    const players=room.players||{};
+    const pCount=Object.keys(players).length;
+    const orders=room.orders||{};
+    const oCount=Object.keys(orders).length;
+
+    if(role==='facilitator'){
+      if(document.getElementById('waiting-screen').classList.contains('active')){
+        document.getElementById('waiting-count').textContent=pCount+' משתתפים מחוברים';
+        document.getElementById('players-list').innerHTML=Object.values(players).map(n=>`<span class="player-chip">${n}</span>`).join('');
+      }
+      if(document.getElementById('sort-fac-screen').classList.contains('active')){
+        document.getElementById('sort-count-display').textContent=oCount+' מתוך '+pCount+' שלחו את הסדר';
+      }
+      if(document.getElementById('fac-question-screen').classList.contains('active')){
+        const answers=room.qAnswers||{};
+        const allAnswers=Object.values(answers);
+        const stId=room.currentStation;
+        if(!stId)return;
+        const station=STATIONS.find(s=>s.id===stId);
+        const qIdx=room.currentQ||0;
+        const q=station.questions[qIdx];
+        document.getElementById('fac-q-title').textContent=station.emoji+' '+station.label;
+
+        let html=`<div style="text-align:center;margin-bottom:0.75rem;color:var(--muted);font-size:0.85rem;">${allAnswers.length} מתוך ${pCount} ענו</div>`;
+        html+=`<p style="font-weight:700;text-align:center;margin-bottom:0.75rem;">${q.text}</p>`;
+
+        if(q.type==='choice'||q.type==='choice+open'){
+          const counts={};
+          allAnswers.forEach(a=>{counts[a]=(counts[a]||0)+1;});
+          const allOpts=[...q.options,...Object.keys(counts).filter(k=>!q.options.includes(k))];
+          html+=allOpts.map(opt=>{
+            const c=counts[opt]||0;
+            const pct=allAnswers.length>0?Math.round(c/allAnswers.length*100):0;
+            return `<div class="result-row">
+              <span class="result-label">${opt}</span>
+              <div class="result-bar-wrap"><div class="result-bar" style="width:${pct}%"></div></div>
+              <span class="result-count">${c}</span>
+            </div>`;
+          }).join('');
+        } else {
+          html+=allAnswers.map(a=>`<div class="open-answer-chip">💬 ${a}</div>`).join('');
+        }
+        document.getElementById('fac-q-results').innerHTML=html;
+      }
+    }
+
+    if(role==='player'){
+      if(room.status==='ended'){stopPoll();show('final-screen');return;}
+      if(room.status==='question'&&room.currentStation){
+        const stId=room.currentStation;
+        const qIdx=room.currentQ||0;
+        const station=STATIONS.find(s=>s.id===stId);
+        if(!document.getElementById('question-screen').classList.contains('active')||!answeredQ){
+          if(!answeredQ)renderPlayerQuestion(station,qIdx);
+        }
+      }
+      if(room.status==='sorting'&&!document.getElementById('sort-player-screen').classList.contains('active')&&!submittedOrder){
+        show('sort-player-screen');
+      }
+    }
+  },2500);
+}
+function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+showEntryChoice();
+</script>
+</body>
+</html>
