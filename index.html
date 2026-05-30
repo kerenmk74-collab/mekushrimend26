@@ -1,1 +1,784 @@
 
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מקושרים — מפת המסע</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;900&display=swap');
+
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --card: #1a2235;
+  --accent: #f59e0b;
+  --blue: #3b82f6;
+  --glow: #60a5fa;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --line: #2d3748;
+  --success: #10b981;
+  --danger: #ef4444;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family:'Heebo',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+.screen { display:none; min-height:100vh; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem; }
+.screen.active { display:flex; }
+
+/* ===== ENTRY ===== */
+#entry-screen {
+  background: radial-gradient(ellipse at 50% 0%, #1e3a5f 0%, var(--bg) 70%);
+  gap:2rem;
+  text-align:center;
+}
+
+.logo h1 {
+  font-size:3rem;
+  font-weight:900;
+  background: linear-gradient(135deg, #f59e0b, #60a5fa);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  margin-bottom:0.5rem;
+}
+
+.logo p { color:var(--muted); font-size:1rem; }
+
+.entry-btns { display:flex; flex-direction:column; gap:0.75rem; width:100%; max-width:300px; }
+
+.btn-primary {
+  background:linear-gradient(135deg,#f59e0b,#d97706);
+  color:#000;
+  border:none;
+  padding:0.875rem 1.5rem;
+  border-radius:12px;
+  font-family:'Heebo',sans-serif;
+  font-size:1rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s;
+  box-shadow: 0 4px 15px rgba(245,158,11,0.3);
+}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(245,158,11,0.4); }
+
+.btn-secondary {
+  background:var(--card);
+  color:var(--text);
+  border:1px solid var(--line);
+  padding:0.875rem 1.5rem;
+  border-radius:12px;
+  font-family:'Heebo',sans-serif;
+  font-size:0.95rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.btn-secondary:hover { border-color:var(--glow); color:var(--glow); }
+
+.join-form {
+  display:flex; flex-direction:column; gap:0.75rem;
+  width:100%; max-width:300px;
+}
+
+.join-form input {
+  background:var(--card);
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:0.875rem 1rem;
+  border-radius:12px;
+  font-family:'Heebo',sans-serif;
+  font-size:1rem;
+  text-align:center;
+  outline:none;
+  transition:border-color 0.2s;
+}
+.join-form input:focus { border-color:var(--glow); }
+.join-form input::placeholder { color:var(--muted); }
+
+.error-msg { color:var(--danger); font-size:0.85rem; text-align:center; display:none; }
+
+/* ===== WAITING ROOM (Facilitator) ===== */
+#waiting-screen {
+  background: radial-gradient(ellipse at 50% 0%, #1e3a5f 0%, var(--bg) 70%);
+  gap:1.5rem;
+  text-align:center;
+}
+
+.room-code-display {
+  font-size:4rem;
+  font-weight:900;
+  color:var(--accent);
+  letter-spacing:8px;
+  text-shadow:0 0 30px rgba(245,158,11,0.5);
+}
+
+.players-list {
+  display:flex; flex-wrap:wrap; gap:0.5rem;
+  justify-content:center; max-width:360px;
+}
+
+.player-chip {
+  background:rgba(59,130,246,0.2);
+  border:1px solid rgba(96,165,250,0.3);
+  padding:0.4rem 0.875rem;
+  border-radius:20px;
+  font-size:0.9rem;
+  color:var(--glow);
+  animation:popIn 0.3s;
+}
+
+@keyframes popIn {
+  from { transform:scale(0); opacity:0; }
+  to { transform:scale(1); opacity:1; }
+}
+
+.waiting-info { color:var(--muted); font-size:0.9rem; }
+
+/* ===== STATION SELECTION (Facilitator) ===== */
+#station-select-screen {
+  background:var(--bg);
+  gap:1.5rem;
+  padding-top:2rem;
+  padding-bottom:2rem;
+  justify-content:flex-start;
+}
+
+.screen-title { font-size:1.3rem; font-weight:700; text-align:center; }
+.screen-subtitle { color:var(--muted); font-size:0.9rem; text-align:center; }
+
+.stations-grid {
+  display:flex; flex-direction:column; gap:0.75rem;
+  width:100%; max-width:400px;
+}
+
+.station-card {
+  background:var(--card);
+  border:2px solid var(--line);
+  border-radius:16px;
+  padding:1rem 1.25rem;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;
+  align-items:center;
+  gap:1rem;
+}
+.station-card:hover { border-color:var(--accent); transform:translateX(-3px); }
+.station-card.active { border-color:var(--success); background:rgba(16,185,129,0.1); }
+
+.station-emoji { font-size:2rem; flex-shrink:0; }
+.station-info h3 { font-size:1rem; font-weight:700; }
+.station-info p { color:var(--muted); font-size:0.85rem; margin-top:0.2rem; }
+
+.station-status {
+  margin-right:auto;
+  font-size:0.8rem;
+  padding:0.25rem 0.5rem;
+  border-radius:6px;
+  background:rgba(16,185,129,0.2);
+  color:var(--success);
+  display:none;
+}
+.station-card.active .station-status { display:block; }
+
+/* ===== PLAYER SCREEN ===== */
+#player-screen {
+  background: radial-gradient(ellipse at 50% -20%, #1e3a5f 0%, var(--bg) 60%);
+  gap:1.5rem;
+  text-align:center;
+}
+
+.player-card {
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:1.5rem;
+  max-width:400px;
+  width:100%;
+}
+
+.station-header {
+  display:flex; flex-direction:column;
+  align-items:center; gap:0.5rem;
+  margin-bottom:1.25rem;
+}
+
+.station-icon { font-size:3rem; }
+.station-title { font-size:1.3rem; font-weight:700; }
+.station-desc { color:var(--muted); font-size:0.9rem; }
+
+/* Answer options */
+.answer-options {
+  display:flex; flex-direction:column; gap:0.6rem;
+  width:100%; max-width:400px;
+}
+
+.answer-btn {
+  background:var(--card);
+  border:2px solid var(--line);
+  color:var(--text);
+  padding:0.875rem 1rem;
+  border-radius:12px;
+  font-family:'Heebo',sans-serif;
+  font-size:0.95rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:right;
+  direction:rtl;
+}
+.answer-btn:hover { border-color:var(--accent); background:rgba(245,158,11,0.1); }
+.answer-btn.voted { border-color:var(--success); background:rgba(16,185,129,0.15); color:var(--success); pointer-events:none; }
+
+/* ===== RESULTS SCREEN (Facilitator) ===== */
+#results-screen {
+  background:var(--bg);
+  gap:1.5rem;
+  padding-top:2rem;
+  padding-bottom:2rem;
+  justify-content:flex-start;
+}
+
+.results-card {
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:1.25rem;
+  width:100%;
+  max-width:420px;
+}
+
+.result-row {
+  display:flex; align-items:center; gap:0.75rem;
+  margin-bottom:0.75rem;
+}
+
+.result-label { font-size:0.9rem; font-weight:600; min-width:120px; }
+
+.result-bar-wrap {
+  flex:1;
+  background:rgba(45,55,72,0.5);
+  border-radius:8px;
+  height:28px;
+  overflow:hidden;
+  position:relative;
+}
+
+.result-bar {
+  height:100%;
+  background:linear-gradient(135deg,var(--accent),var(--blue));
+  border-radius:8px;
+  transition:width 0.8s ease;
+  min-width:0%;
+}
+
+.result-count {
+  font-size:0.85rem;
+  font-weight:700;
+  color:var(--accent);
+  min-width:30px;
+  text-align:center;
+}
+
+.players-answered {
+  color:var(--muted);
+  font-size:0.85rem;
+  text-align:center;
+}
+
+/* ===== FINAL SCREEN ===== */
+#final-screen {
+  background: radial-gradient(ellipse at 50% 0%, #1e3a5f 0%, var(--bg) 70%);
+  gap:1.5rem;
+  text-align:center;
+}
+
+.final-emoji { font-size:4rem; animation:bounce 1s infinite; }
+@keyframes bounce {
+  0%,100% { transform:translateY(0); }
+  50% { transform:translateY(-10px); }
+}
+
+.final-title { font-size:1.8rem; font-weight:900; }
+.final-subtitle { color:var(--muted); font-size:1rem; line-height:1.6; }
+
+/* ===== MISC ===== */
+.fac-header {
+  background:var(--surface);
+  padding:0.875rem 1.25rem;
+  display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--line);
+  width:100%;
+  position:sticky; top:0; z-index:10;
+  flex-shrink:0;
+}
+.fac-header h2 { font-size:1rem; font-weight:700; }
+.fac-badge {
+  background:rgba(245,158,11,0.2);
+  color:var(--accent);
+  font-size:0.8rem;
+  font-weight:700;
+  padding:0.25rem 0.5rem;
+  border-radius:6px;
+}
+
+.loading {
+  color:var(--muted);
+  font-size:0.9rem;
+  text-align:center;
+  padding:1rem;
+}
+
+/* Metro map decorative */
+.metro-decoration {
+  position:fixed;
+  left:0; top:0;
+  width:100%; height:100%;
+  pointer-events:none;
+  opacity:0.03;
+  z-index:0;
+}
+
+.content { position:relative; z-index:1; display:contents; }
+</style>
+</head>
+<body>
+
+<!-- ENTRY SCREEN -->
+<div id="entry-screen" class="screen active">
+  <div class="logo">
+    <h1>🚇 מקושרים</h1>
+    <p>מפת המסע שלנו — שנה שלמה יחד</p>
+  </div>
+
+  <div id="entry-choice" class="entry-btns">
+    <button class="btn-primary" onclick="showFacilitatorSetup()">אני המנחה 👩‍🏫</button>
+    <button class="btn-secondary" onclick="showJoinForm()">אני מצטרף/ת לקבוצה 🙋</button>
+  </div>
+
+  <div id="join-form-area" style="display:none; width:100%; max-width:300px; display:none;">
+    <div class="join-form">
+      <input type="text" id="player-name-input" placeholder="השם שלך" maxlength="20"/>
+      <input type="text" id="room-code-input" placeholder="קוד חדר (4 ספרות)" maxlength="4" inputmode="numeric"/>
+      <button class="btn-primary" onclick="joinGame()">כניסה למשחק ✨</button>
+      <button class="btn-secondary" onclick="showEntryChoice()">חזרה</button>
+    </div>
+    <p id="join-error" class="error-msg"></p>
+  </div>
+</div>
+
+<!-- WAITING SCREEN (Facilitator sees this after creating room) -->
+<div id="waiting-screen" class="screen">
+  <div class="fac-header" style="position:relative; margin-bottom:1rem;">
+    <h2>🚇 מקושרים</h2>
+    <span class="fac-badge">מנחה</span>
+  </div>
+  <p class="waiting-info">שתפו את קוד החדר עם הקבוצה</p>
+  <div class="room-code-display" id="display-room-code">----</div>
+  <p class="waiting-info" id="players-count-text">ממתינים לשחקנים...</p>
+  <div class="players-list" id="players-list"></div>
+  <button class="btn-primary" onclick="goToStationSelect()" style="margin-top:1rem;">התחל את המסע ▶</button>
+  <button class="btn-secondary" onclick="location.reload()">יציאה</button>
+</div>
+
+<!-- STATION SELECT SCREEN (Facilitator chooses which station to show) -->
+<div id="station-select-screen" class="screen">
+  <div class="fac-header">
+    <h2>בחרי תחנה</h2>
+    <span class="fac-badge" id="fac-room-badge"></span>
+  </div>
+  <p class="screen-subtitle" style="margin-top:1rem;" id="ss-players-info">טוענת...</p>
+  <div class="stations-grid" id="stations-grid"></div>
+  <button class="btn-primary" id="launch-station-btn" onclick="launchStation()" style="max-width:400px;width:100%;margin-top:0.5rem;" disabled>הצג תחנה לקבוצה</button>
+  <button class="btn-secondary" onclick="showResults()" style="max-width:400px;width:100%;">ראי תוצאות 📊</button>
+  <button class="btn-secondary" onclick="endGame()" style="max-width:400px;width:100%;">סיום המסע 🏁</button>
+</div>
+
+<!-- RESULTS SCREEN -->
+<div id="results-screen" class="screen">
+  <div class="fac-header">
+    <h2>תוצאות</h2>
+    <span class="fac-badge" id="results-room-badge"></span>
+  </div>
+  <div id="results-content" style="width:100%;max-width:420px;margin-top:1rem;"></div>
+  <button class="btn-secondary" onclick="showStationSelect()" style="max-width:420px;width:100%;margin-top:0.5rem;">חזרה לבחירת תחנה</button>
+</div>
+
+<!-- PLAYER SCREEN -->
+<div id="player-screen" class="screen">
+  <p id="player-greeting" style="color:var(--muted);font-size:0.9rem;"></p>
+  <div id="player-content" style="width:100%;max-width:420px;display:flex;flex-direction:column;align-items:center;gap:1rem;"></div>
+</div>
+
+<!-- FINAL SCREEN -->
+<div id="final-screen" class="screen">
+  <div class="final-emoji">🎉</div>
+  <h2 class="final-title">המסע הסתיים!</h2>
+  <p class="final-subtitle">תודה שהיית חלק מהמסע המיוחד הזה.<br>שנה שלמה של קשרים אמיתיים. 💙</p>
+  <button class="btn-primary" onclick="location.reload()" style="margin-top:1rem;">סיום</button>
+</div>
+
+<script>
+// ==================== FIREBASE CONFIG ====================
+const FB_URL = 'https://mekusharim-default-rtdb.firebaseio.com';
+
+async function fbSet(path, val) {
+  try {
+    const r = await fetch(FB_URL + '/' + path + '.json', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(val)
+    });
+    return await r.json();
+  } catch(e) { console.error('fbSet error', e); }
+}
+
+async function fbGet(path) {
+  try {
+    const r = await fetch(FB_URL + '/' + path + '.json');
+    return await r.json();
+  } catch(e) { console.error('fbGet error', e); return null; }
+}
+
+async function fbPatch(path, val) {
+  try {
+    const r = await fetch(FB_URL + '/' + path + '.json', {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(val)
+    });
+    return await r.json();
+  } catch(e) { console.error('fbPatch error', e); }
+}
+
+async function fbDelete(path) {
+  try {
+    await fetch(FB_URL + '/' + path + '.json', { method: 'DELETE' });
+  } catch(e) {}
+}
+
+// ==================== STATIONS DATA ====================
+const STATIONS = [
+  {
+    id: 'feeling',
+    emoji: '🎭',
+    title: 'איך אני מרגיש/ה עכשיו?',
+    desc: 'בחרו רגש אחד שמתאר לכם',
+    type: 'choice',
+    options: ['😊 שמח/ה','😌 רגוע/ה','🤩 מתרגש/ת','😢 עצוב/ה','😤 עצבני/ת','😶 סתם כאן']
+  },
+  {
+    id: 'memory',
+    emoji: '✨',
+    title: 'הרגע הכי טוב שלנו',
+    desc: 'מה הזיכרון שהכי נשאר לכם?',
+    type: 'choice',
+    options: ['המפגש הראשון 🌟','פעילות עם הקרח 🧊','המפגשים בזום 💻','שיחה שנשארה בלב 💬','כשצחקנו ביחד 😂','משהו אחר']
+  },
+  {
+    id: 'learned',
+    emoji: '🌱',
+    title: 'מה למדתי על עצמי?',
+    desc: 'בחרו משפט אחד שמרגיש נכון',
+    type: 'choice',
+    options: ['אני יכול/ה להתחבר לאחרים 🤝','אני אוהב/ת לשמוע סיפורים 👂','אני חזק/ה יותר ממה שחשבתי 💪','אני צריך/ה זמן להיפתח ⏰','יש לי מה לתרום לקבוצה 🎁','עדיין מגלה 🔍']
+  },
+  {
+    id: 'gift',
+    emoji: '🎁',
+    title: 'מה אני לוקח/ת מהשנה?',
+    desc: 'בחרו דבר אחד שתישאו איתכם',
+    type: 'choice',
+    options: ['תחושה שאני לא לבד 🫂','ידידות חדשה 👫','אומץ לנסות דברים חדשים 🦋','זכרון שישאר איתי 📸','ביטחון עצמי גדול יותר ✨','הרגשה שמישהו ראה אותי 👁️']
+  },
+  {
+    id: 'wish',
+    emoji: '🌟',
+    title: 'מה הייתי רוצה לומר לקבוצה?',
+    desc: 'בחרו משפט אחד',
+    type: 'choice',
+    options: ['תודה על השנה הזו 💙','שיהיה לכולם טוב 🌈','אשמח להמשיך להיות בקשר 📱','היו הכי טובים שאפשר 🌟','תמיד תזכרו שאתם מיוחדים ✨','אני אגעגע 🥺']
+  }
+];
+
+// ==================== STATE ====================
+let myRole = null; // 'facilitator' | 'player'
+let myRoomCode = null;
+let myName = null;
+let selectedStation = null;
+let pollInterval = null;
+let hasVoted = false;
+
+// ==================== SCREENS ====================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showEntryChoice() {
+  document.getElementById('entry-choice').style.display = 'flex';
+  document.getElementById('join-form-area').style.display = 'none';
+}
+
+function showJoinForm() {
+  document.getElementById('entry-choice').style.display = 'none';
+  document.getElementById('join-form-area').style.display = 'block';
+}
+
+function showFacilitatorSetup() {
+  myRole = 'facilitator';
+  createRoom();
+}
+
+// ==================== ROOM CREATION ====================
+async function createRoom() {
+  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  myRoomCode = code;
+
+  await fbSet('rooms/' + code, {
+    created: Date.now(),
+    status: 'waiting',
+    currentStation: null,
+    players: {},
+    votes: {}
+  });
+
+  document.getElementById('display-room-code').textContent = code;
+  showScreen('waiting-screen');
+  startWaitingPoll();
+}
+
+// ==================== JOIN GAME ====================
+async function joinGame() {
+  const name = document.getElementById('player-name-input').value.trim();
+  const code = document.getElementById('room-code-input').value.trim();
+  const err = document.getElementById('join-error');
+
+  if (!name) { err.textContent = 'אנא הכנס/י את שמך'; err.style.display='block'; return; }
+  if (code.length !== 4) { err.textContent = 'קוד חדר חייב להיות 4 ספרות'; err.style.display='block'; return; }
+
+  err.style.display='none';
+
+  const room = await fbGet('rooms/' + code);
+  if (!room) { err.textContent = 'קוד חדר לא קיים. בדקי שוב.'; err.style.display='block'; return; }
+
+  myRole = 'player';
+  myRoomCode = code;
+  myName = name;
+  hasVoted = false;
+
+  // Register player
+  const safeKey = name.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
+  await fbPatch('rooms/' + code + '/players', { [safeKey]: name });
+
+  document.getElementById('player-greeting').textContent = 'שלום, ' + name + '! 👋';
+  showScreen('player-screen');
+  startPlayerPoll();
+}
+
+// ==================== WAITING POLL ====================
+function startWaitingPoll() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    const room = await fbGet('rooms/' + myRoomCode);
+    if (!room) return;
+    const players = room.players || {};
+    const names = Object.values(players);
+    document.getElementById('players-count-text').textContent = names.length + ' משתתפים מחוברים';
+    const list = document.getElementById('players-list');
+    list.innerHTML = names.map(n => `<span class="player-chip">${n}</span>`).join('');
+  }, 2000);
+}
+
+// ==================== STATION SELECT ====================
+function goToStationSelect() {
+  if (pollInterval) clearInterval(pollInterval);
+  showStationSelect();
+  startFacilitatorPoll();
+}
+
+function showStationSelect() {
+  document.getElementById('fac-room-badge').textContent = 'קוד: ' + myRoomCode;
+  showScreen('station-select-screen');
+  renderStations();
+}
+
+function renderStations() {
+  const grid = document.getElementById('stations-grid');
+  grid.innerHTML = STATIONS.map(s => `
+    <div class="station-card ${selectedStation === s.id ? 'active' : ''}" onclick="selectStation('${s.id}')">
+      <span class="station-emoji">${s.emoji}</span>
+      <div class="station-info">
+        <h3>${s.title}</h3>
+        <p>${s.desc}</p>
+      </div>
+      <span class="station-status">פעיל</span>
+    </div>
+  `).join('');
+  document.getElementById('launch-station-btn').disabled = !selectedStation;
+}
+
+function selectStation(id) {
+  selectedStation = id;
+  renderStations();
+}
+
+async function launchStation() {
+  if (!selectedStation) return;
+  hasVoted = false;
+  // Clear previous votes
+  await fbSet('rooms/' + myRoomCode + '/votes', {});
+  await fbPatch('rooms/' + myRoomCode, { currentStation: selectedStation, status: 'active' });
+  showResults();
+}
+
+// ==================== RESULTS ====================
+function showResults() {
+  document.getElementById('results-room-badge').textContent = 'קוד: ' + myRoomCode;
+  showScreen('results-screen');
+  loadResults();
+}
+
+async function loadResults() {
+  const room = await fbGet('rooms/' + myRoomCode);
+  if (!room) return;
+
+  const stationId = room.currentStation || selectedStation;
+  const station = STATIONS.find(s => s.id === stationId);
+  const votes = room.votes || {};
+  const players = room.players || {};
+  const totalPlayers = Object.keys(players).length;
+
+  // Count votes per option
+  const counts = {};
+  Object.values(votes).forEach(v => {
+    counts[v] = (counts[v] || 0) + 1;
+  });
+
+  const totalVotes = Object.values(counts).reduce((a,b) => a+b, 0);
+
+  let html = '';
+  if (station) {
+    html += `<h3 style="margin-bottom:1rem;">${station.emoji} ${station.title}</h3>`;
+    station.options.forEach(opt => {
+      const count = counts[opt] || 0;
+      const pct = totalVotes > 0 ? Math.round(count / totalVotes * 100) : 0;
+      html += `
+        <div class="result-row">
+          <span class="result-label">${opt}</span>
+          <div class="result-bar-wrap">
+            <div class="result-bar" style="width:${pct}%"></div>
+          </div>
+          <span class="result-count">${count}</span>
+        </div>
+      `;
+    });
+  } else {
+    html = '<p class="loading">בחרי תחנה תחילה</p>';
+  }
+
+  html += `<p class="players-answered" style="margin-top:1rem;">${totalVotes} מתוך ${totalPlayers} ענו</p>`;
+
+  document.getElementById('results-content').innerHTML = html;
+  setTimeout(loadResults, 3000);
+}
+
+// ==================== FACILITATOR POLL ====================
+function startFacilitatorPoll() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    const room = await fbGet('rooms/' + myRoomCode);
+    if (!room) return;
+    const players = room.players || {};
+    const count = Object.keys(players).length;
+    document.getElementById('ss-players-info').textContent = count + ' משתתפים מחוברים';
+  }, 3000);
+}
+
+// ==================== PLAYER POLL ====================
+function startPlayerPoll() {
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(async () => {
+    const room = await fbGet('rooms/' + myRoomCode);
+    if (!room) return;
+
+    if (room.status === 'ended') {
+      clearInterval(pollInterval);
+      showScreen('final-screen');
+      return;
+    }
+
+    if (room.currentStation && room.status === 'active') {
+      renderPlayerStation(room.currentStation, room.votes || {});
+    } else {
+      document.getElementById('player-content').innerHTML = `
+        <div class="player-card" style="text-align:center;">
+          <p style="font-size:2rem;">⏳</p>
+          <p style="color:var(--muted);margin-top:0.5rem;">ממתינים למנחה...</p>
+        </div>
+      `;
+      hasVoted = false;
+    }
+  }, 2000);
+}
+
+function renderPlayerStation(stationId, votes) {
+  const station = STATIONS.find(s => s.id === stationId);
+  if (!station) return;
+
+  const safeKey = myName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
+  const myVote = votes[safeKey];
+  hasVoted = !!myVote;
+
+  let html = `
+    <div class="player-card">
+      <div class="station-header">
+        <span class="station-icon">${station.emoji}</span>
+        <h2 class="station-title">${station.title}</h2>
+        <p class="station-desc">${station.desc}</p>
+      </div>
+    </div>
+    <div class="answer-options">
+  `;
+
+  station.options.forEach(opt => {
+    const isMyVote = myVote === opt;
+    html += `<button class="answer-btn ${isMyVote ? 'voted' : ''}" onclick="submitVote('${opt}')">${opt}</button>`;
+  });
+
+  html += '</div>';
+
+  if (hasVoted) {
+    html += `<p style="color:var(--success);font-size:0.9rem;text-align:center;">✅ תשובתך נרשמה!</p>`;
+  }
+
+  document.getElementById('player-content').innerHTML = html;
+}
+
+async function submitVote(option) {
+  if (hasVoted) return;
+  hasVoted = true;
+  const safeKey = myName.replace(/[^a-zA-Z0-9\u0590-\u05FF]/g, '_');
+  await fbPatch('rooms/' + myRoomCode + '/votes', { [safeKey]: option });
+}
+
+// ==================== END GAME ====================
+async function endGame() {
+  await fbPatch('rooms/' + myRoomCode, { status: 'ended' });
+  if (pollInterval) clearInterval(pollInterval);
+  showScreen('final-screen');
+}
+
+// Init
+showEntryChoice();
+</script>
+</body>
+</html>
